@@ -1,0 +1,125 @@
+name: Deploy Frontend
+
+# Deploy otomatis ke absen.sjr-komunitas.com setiap push ke main.
+#
+# Pilih target deployment lewat Repository variable `DEPLOY_TARGET`:
+#   - (tidak diisi / selain "vps") → Cloudflare Workers  (default)
+#   - "vps"                        → VPS (Node + nginx)
+#
+# Secrets yang wajib disetel di Settings → Secrets and variables → Actions:
+#   Semua target : VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
+#   Cloudflare   : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+#   VPS          : VPS_HOST, VPS_USER, VPS_PORT (opsional, default 22),
+#                  VPS_PATH, VPS_SSH_KEY (private key SSH)
+#
+# Detail lengkap: DEPLOYMENT.md
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  build:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # "vps" → build server Node; selain itu build default (Cloudflare).
+          NITRO_PRESET: ${{ vars.DEPLOY_TARGET == 'vps' && 'node-server' || '' }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: .output/
+          if-no-files-found: error
+
+  # ── Target 1: Cloudflare Workers (default) ───────────────────────────────
+  deploy-cloudflare:
+    name: Deploy ke Cloudflare Workers
+    needs: build
+    if: vars.DEPLOY_TARGET != 'vps'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: .output
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy
+        run: npx wrangler deploy --config .output/server/wrangler.json
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # ── Target 2: VPS (Node + nginx) ─────────────────────────────────────────
+  deploy-vps:
+    name: Deploy ke VPS
+    needs: build
+    if: vars.DEPLOY_TARGET == 'vps'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: .output
+
+      - name: Deploy via rsync + restart
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          PORT="${VPS_PORT:-22}"
+          # Hasil build masuk ke $VPS_PATH/.output (sesuai unit systemd di DEPLOYMENT.md)
+          rsync -az --delete \
+            -e "ssh -p $PORT -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+            .output/ "$VPS_USER@$VPS_HOST:$VPS_PATH/.output"
+          ssh -p "$PORT" -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            "$VPS_USER@$VPS_HOST" "sudo systemctl restart absensjr"

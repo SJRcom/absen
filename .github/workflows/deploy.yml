@@ -91,23 +91,25 @@ jobs:
           WORKERS_DEV_SUBDOMAIN: ${{ vars.WORKERS_DEV_SUBDOMAIN || 'absensjr' }}
         run: |
           set -euo pipefail
-          SUB=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" || true)
-          NAME=$(echo "$SUB" | grep -o '"name": *"[^"]*"' | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/' || true)
-          if [ -n "$NAME" ]; then
-            echo "Subdomain workers.dev sudah aktif: $NAME.workers.dev"
+          BASE="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain"
+          AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          echo "WORKERS_DEV_SUBDOMAIN=[$WORKERS_DEV_SUBDOMAIN]"
+
+          # Cek apakah sudah terdaftar (respons memakai field "subdomain")
+          SUB=$(curl -s -H "$AUTH" "$BASE" || true)
+          if printf '%s' "$SUB" | grep -q '"subdomain"'; then
+            echo "Subdomain workers.dev sudah terdaftar (respon: $SUB)"
             exit 0
           fi
-          echo "Mendaftarkan subdomain $WORKERS_DEV_SUBDOMAIN.workers.dev ..."
-          RESP=$(curl -s -X PUT \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"name\": \"$WORKERS_DEV_SUBDOMAIN\"}" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain")
+
+          # Bangun JSON dengan printf (tanpa backslash, anti-salah escaping)
+          printf '{"name":"%s"}' "$WORKERS_DEV_SUBDOMAIN" > /tmp/subdomain.json
+          echo "Body yang dikirim: $(cat /tmp/subdomain.json)"
+          RESP=$(curl -s -X PUT -H "$AUTH" -H "Content-Type: application/json" --data @/tmp/subdomain.json "$BASE")
           echo "$RESP"
           echo "$RESP" | grep -q '"success":true' || {
-            echo "⚠️ Gagal mendaftarkan. Kemungkinan nama sudah dipakai orang lain —"
-            echo "set Repository variable WORKERS_DEV_SUBDOMAIN dengan nama lain, lalu re-run."
+            echo "⚠️ Gagal mendaftarkan subdomain. Lihat pesan error di atas (mungkin nama sudah dipakai orang lain)."
+            echo "Solusi: set Repository variable WORKERS_DEV_SUBDOMAIN dengan nama lain, lalu re-run."
             exit 1
           }
 

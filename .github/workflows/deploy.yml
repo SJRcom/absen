@@ -56,6 +56,8 @@ jobs:
           name: frontend-build
           path: .output/
           if-no-files-found: error
+          # .output diawali titik → dianggap hidden file; wajib diikutkan.
+          include-hidden-files: true
 
   # ── Target 1: Cloudflare Workers (default) ───────────────────────────────
   deploy-cloudflare:

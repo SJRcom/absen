@@ -103,15 +103,19 @@ jobs:
           fi
 
           # Bangun JSON dengan printf (tanpa backslash, anti-salah escaping)
+          # Bangun JSON dengan printf (tanpa backslash, anti-salah escaping)
           printf '{"name":"%s"}' "$WORKERS_DEV_SUBDOMAIN" > /tmp/subdomain.json
           echo "Body yang dikirim: $(cat /tmp/subdomain.json)"
           RESP=$(curl -s -X PUT -H "$AUTH" -H "Content-Type: application/json" --data @/tmp/subdomain.json "$BASE")
+          echo "Respon API:"
           echo "$RESP"
-          echo "$RESP" | grep -q '"success":true' || {
-            echo "⚠️ Gagal mendaftarkan subdomain. Lihat pesan error di atas (mungkin nama sudah dipakai orang lain)."
+          if printf '%s' "$RESP" | grep -qE '"success"[[:space:]]*:[[:space:]]*true'; then
+            echo "✅ Subdomain terdaftar: $WORKERS_DEV_SUBDOMAIN.workers.dev"
+          else
+            echo "⚠️ Gagal mendaftarkan subdomain. Lihat respon di atas (mungkin nama sudah dipakai orang lain)."
             echo "Solusi: set Repository variable WORKERS_DEV_SUBDOMAIN dengan nama lain, lalu re-run."
             exit 1
-          }
+          fi
 
       - name: Deploy
         run: npx wrangler deploy --config .output/server/wrangler.json

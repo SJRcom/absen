@@ -84,6 +84,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Daftarkan subdomain workers.dev (sekali saja)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKERS_DEV_SUBDOMAIN: ${{ vars.WORKERS_DEV_SUBDOMAIN || 'absensjr' }}
+        run: |
+          set -euo pipefail
+          SUB=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" || true)
+          NAME=$(echo "$SUB" | grep -o '"name": *"[^"]*"' | head -1 | sed 's/.*"name": *"\([^"]*\)".*/\1/' || true)
+          if [ -n "$NAME" ]; then
+            echo "Subdomain workers.dev sudah aktif: $NAME.workers.dev"
+            exit 0
+          fi
+          echo "Mendaftarkan subdomain $WORKERS_DEV_SUBDOMAIN.workers.dev ..."
+          RESP=$(curl -s -X PUT \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\": \"$WORKERS_DEV_SUBDOMAIN\"}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain")
+          echo "$RESP"
+          echo "$RESP" | grep -q '"success":true' || {
+            echo "⚠️ Gagal mendaftarkan. Kemungkinan nama sudah dipakai orang lain —"
+            echo "set Repository variable WORKERS_DEV_SUBDOMAIN dengan nama lain, lalu re-run."
+            exit 1
+          }
+
       - name: Deploy
         run: npx wrangler deploy --config .output/server/wrangler.json
         env:

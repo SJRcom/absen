@@ -158,9 +158,10 @@ Workflow `.github/workflows/deploy.yml` sudah disiapkan: **setiap push ke
 ### Catatan per target
 
 - **Cloudflare**: setelah deploy pertama, pasang custom domain di dashboard
-  **Workers & Pages → `tanstack-start-ts` → Settings → Domains & Routes** →
-  Add custom domain → `absen.sjr-komunitas.com` (DNS harus dikelola/menunjuk
-  ke Cloudflare). SSL otomatis.
+  **Workers & Pages → nama worker (mis. `sjrcom-absen`, lihat log deploy) →
+  Settings → Domains & Routes** → Add custom domain →
+  `absen.sjr-komunitas.com` (DNS harus dikelola/menunjuk ke Cloudflare).
+  SSL otomatis.
 - **VPS**: pastikan di VPS sudah ada user deploy dengan **passwordless sudo**
   untuk `systemctl restart absensjr`, folder `VPS_PATH` sudah ada & writable
   oleh user tersebut, dan service `absensjr` sudah dibuat (lihat Opsi A).

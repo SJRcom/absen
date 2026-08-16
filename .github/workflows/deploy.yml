@@ -117,6 +117,9 @@ jobs:
             exit 1
           fi
 
+      - name: Aktifkan URL workers.dev
+        run: node -e "const fs=require('fs');const p='.output/server/wrangler.json';const c=JSON.parse(fs.readFileSync(p,'utf8'));c.workers_dev=true;fs.writeFileSync(p,JSON.stringify(c,null,2))"
+
       - name: Deploy
         run: npx wrangler deploy --config .output/server/wrangler.json
         env:

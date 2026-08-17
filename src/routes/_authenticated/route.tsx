@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { ScanLine, Users, MapPin, Receipt, Wallet, LogOut, CalendarDays, ShoppingBag, ShieldCheck, Clock } from "lucide-react";
+import { ScanLine, Users, MapPin, Receipt, Wallet, LogOut, CalendarDays, ShoppingBag, ShieldCheck, Clock, Nfc } from "lucide-react";
 import logoAsset from "@/assets/logo-sjr.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 const NAV = [
   { to: "/scan", label: "Scan", icon: ScanLine },
+  { to: "/nfc-scan", label: "NFC Absen", icon: Nfc },
   { to: "/events", label: "Event", icon: CalendarDays },
   { to: "/products", label: "Produk", icon: ShoppingBag },
   { to: "/topup", label: "Top Up", icon: Wallet },
@@ -98,7 +99,7 @@ function Shell() {
       {/* Bottom nav mobile */}
       {isStaff && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t bg-background">
-          <div className={`grid ${isSuper ? "grid-cols-8" : "grid-cols-7"}`}>
+          <div className={`grid ${isSuper ? "grid-cols-9" : "grid-cols-8"}`}>
             {nav.map((n) => {
               const active = pathname.startsWith(n.to);
               return (

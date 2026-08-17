@@ -143,7 +143,7 @@ function Page() {
             </div>
             <div className="space-y-3">
               <Field label="Nama"><input value={editing.name ?? ""} onChange={(e)=>setEditing({ ...editing, name: e.target.value })} className="w-full rounded-md border bg-background px-3 py-2 text-sm" /></Field>
-              <Field label="Nomor member (untuk QR Code)"><input value={editing.member_no ?? ""} onChange={(e)=>setEditing({ ...editing, member_no: e.target.value })} placeholder="MBR-0001" className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono" /></Field>
+              <Field label="Nomor member (untuk QR Code)"><input value={editing.member_no ?? ""} onChange={(e)=>setEditing({ ...editing, member_no: e.target.value })} placeholder="mis. SJR24-00019" className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono" /></Field>
               <Field label="Nomor HP"><input value={editing.phone ?? ""} onChange={(e)=>setEditing({ ...editing, phone: e.target.value })} placeholder="08xxxxxxxxxx" className="w-full rounded-md border bg-background px-3 py-2 text-sm" /></Field>
               <Field label="UID kartu (hex)"><input value={editing.card_uid ?? ""} onChange={(e)=>setEditing({ ...editing, card_uid: e.target.value })} placeholder="04A1B2C3" className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono" /></Field>
               <Field label="Pengali tarif (0.5 = diskon 50%, 1 = normal, 1.5 = tambah 50%)">

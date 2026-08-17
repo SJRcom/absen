@@ -251,7 +251,7 @@ function ProductsPage() {
                   <div>
                     <label className="text-sm font-medium">Nomor member manual</label>
                     <div className="mt-1 flex gap-2">
-                      <input value={manualMember} onChange={(e) => setManualMember(e.target.value.toUpperCase())} placeholder="mis. MBR-0001" className="flex-1 rounded-md border bg-background px-3 py-2 text-sm font-mono" />
+                      <input value={manualMember} onChange={(e) => setManualMember(e.target.value.toUpperCase())} placeholder="mis. SJR24-00019" className="flex-1 rounded-md border bg-background px-3 py-2 text-sm font-mono" />
                       <button onClick={() => manualMember && buy(manualMember.trim(), "member")} disabled={!manualMember || processing} className="rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50">Bayar</button>
                     </div>
                   </div>

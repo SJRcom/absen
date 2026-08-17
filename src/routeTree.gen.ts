@@ -17,6 +17,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedFieldsRouteImport } from './routes/_authenticated/fields'
+import { Route as AuthenticatedNfcScanRouteImport } from './routes/_authenticated/nfc-scan'
 import { Route as AuthenticatedParticipantsRouteImport } from './routes/_authenticated/participants'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
@@ -63,6 +64,11 @@ const AuthenticatedFieldsRoute = AuthenticatedFieldsRouteImport.update({
   path: '/fields',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNfcScanRoute = AuthenticatedNfcScanRouteImport.update({
+  id: '/nfc-scan',
+  path: '/nfc-scan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedParticipantsRoute =
   AuthenticatedParticipantsRouteImport.update({
     id: '/participants',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/events': typeof AuthenticatedEventsRoute
   '/fields': typeof AuthenticatedFieldsRoute
+  '/nfc-scan': typeof AuthenticatedNfcScanRoute
   '/participants': typeof AuthenticatedParticipantsRoute
   '/products': typeof AuthenticatedProductsRoute
   '/scan': typeof AuthenticatedScanRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/events': typeof AuthenticatedEventsRoute
   '/fields': typeof AuthenticatedFieldsRoute
+  '/nfc-scan': typeof AuthenticatedNfcScanRoute
   '/participants': typeof AuthenticatedParticipantsRoute
   '/products': typeof AuthenticatedProductsRoute
   '/scan': typeof AuthenticatedScanRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/fields': typeof AuthenticatedFieldsRoute
+  '/_authenticated/nfc-scan': typeof AuthenticatedNfcScanRoute
   '/_authenticated/participants': typeof AuthenticatedParticipantsRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/events'
     | '/fields'
+    | '/nfc-scan'
     | '/participants'
     | '/products'
     | '/scan'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/events'
     | '/fields'
+    | '/nfc-scan'
     | '/participants'
     | '/products'
     | '/scan'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/events'
     | '/_authenticated/fields'
+    | '/_authenticated/nfc-scan'
     | '/_authenticated/participants'
     | '/_authenticated/products'
     | '/_authenticated/scan'
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFieldsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/nfc-scan': {
+      id: '/_authenticated/nfc-scan'
+      path: '/nfc-scan'
+      fullPath: '/nfc-scan'
+      preLoaderRoute: typeof AuthenticatedNfcScanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/participants': {
       id: '/_authenticated/participants'
       path: '/participants'
@@ -307,6 +326,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
   AuthenticatedFieldsRoute: typeof AuthenticatedFieldsRoute
+  AuthenticatedNfcScanRoute: typeof AuthenticatedNfcScanRoute
   AuthenticatedParticipantsRoute: typeof AuthenticatedParticipantsRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
@@ -318,6 +338,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
   AuthenticatedFieldsRoute: AuthenticatedFieldsRoute,
+  AuthenticatedNfcScanRoute: AuthenticatedNfcScanRoute,
   AuthenticatedParticipantsRoute: AuthenticatedParticipantsRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,

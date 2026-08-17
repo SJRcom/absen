@@ -209,3 +209,93 @@ membutuhkan koneksi HTTPS (`getUserMedia`/`NDEFReader` tidak berjalan di HTTP).
 - [ ] `/forgot-password` → email reset terkirim, link mengarah ke `/reset-password`.
 - [ ] `/reset-password` dengan link dari email → password bisa diganti.
 - [ ] Cek saldo via nomor member & NFC berfungsi.
+
+---
+
+## 10. Email reset password — lepas dari infrastruktur Lovable
+
+### Masalah
+
+Proyek Supabase yang dibuat lewat Lovable mengirim email auth (termasuk reset
+password) lewat **infrastruktur email Lovable** — ditandai pengirim di domain
+`auth.lovable-app.email` dan link pelacak `lnk.auth.lovable-app.email`.
+Infrastruktur ini **membangun link konfirmasi memakai URL app Lovable**
+(`absensjr.lovable.app`), sehingga mengganti Site URL / Redirect URLs di
+dashboard Supabase **tidak berpengaruh** pada link di email.
+
+Urutan prioritas pengiriman email di Supabase:
+`auth hook (Send Email) > Custom SMTP > email bawaan Supabase`.
+Selama **auth hook Send Email milik Lovable aktif**, SMTP maupun email bawaan
+Supabase tidak akan dipakai.
+
+### Langkah 1 — Matikan auth hook Send Email Lovable
+
+1. **Supabase Dashboard** → proyek → **Authentication** → tab **Hooks**
+   (di UI lama: **Project Settings → Auth → Hooks**).
+2. Cari hook bertipe **Send Email** (nama seperti `auth-email-hook`,
+   Type `send_email`) → **nonaktifkan** (toggle) atau hapus.
+3. Kalau hook tidak ada atau terus muncul kembali → proyek dikelola ketat
+   Lovable Cloud; hubungi dukungan Lovable atau daftarkan custom domain di
+   pengaturan Lovable agar email memakai domain produksi.
+
+### Langkah 2 — Buat akun & API key Resend
+
+1. Daftar di https://resend.com (ada paket gratis: ±100 email/hari).
+2. **API Keys** → **Create API Key**:
+   - Name: `supabase-auth`
+   - Permission: **Sending access** (bukan Full access)
+   - Scope: **Restricted** ke domain yang dipakai (disarankan) atau All domains
+   - Salin key-nya (format `re_...`) — hanya tampil sekali.
+
+### Langkah 3 — Verifikasi domain di Resend (wajib untuk kirim ke penerima lain)
+
+> Tanpa domain terverifikasi, paket gratis Resend hanya bisa mengirim ke email
+> yang dipakai mendaftar. Reset password untuk staf butuh domain terverifikasi.
+
+1. **Domains** → **Add Domain** — pakai subdomain agar reputasi domain utama
+   aman, mis. `notify.sjr-komunitas.com`.
+2. Salin 3 record DNS yang diberikan (TXT SPF, TXT DKIM, CNAME DKIM2) dan
+   tambahkan di pengelola DNS domain Anda.
+3. Tunggu status **Verified** (biasanya beberapa menit–jam).
+4. Alternatif untuk uji cepat tanpa DNS: cukup kirim test ke email pendaftar
+   (pakai port/alamat SMTP yang sama).
+
+### Langkah 4 — Isi Custom SMTP di Supabase
+
+**Supabase Dashboard** → **Project Settings → Authentication → Email** →
+aktifkan **Enable Custom SMTP**, isi:
+
+| Field          | Nilai                                      |
+| -------------- | ------------------------------------------ |
+| Host           | `smtp.resend.com`                          |
+| Port           | `465` (atau `587`)                         |
+| Username       | `resend`                                   |
+| Password       | API key Resend (`re_...`)                  |
+| Sender email   | `noreply@notify.sjr-komunitas.com` (domain terverifikasi) |
+| Sender name    | `Absensi SJR`                              |
+
+Simpan → tombol **Send test email** tersedia untuk memastikan SMTP jalan.
+
+### Langkah 5 — Pastikan Site URL & Redirect URLs benar
+
+**Authentication → URL Configuration**:
+
+- Site URL: `https://sjrcom-absen.absensjr.workers.dev`
+  (atau `https://absen.sjr-komunitas.com` setelah custom domain aktif)
+- Redirect URLs: `https://sjrcom-absen.absensjr.workers.dev/**`
+  dan `https://sjrcom-absen.absensjr.workers.dev/reset-password`
+
+### Langkah 6 — Uji end-to-end
+
+1. Buka `https://sjrcom-absen.absensjr.workers.dev/forgot-password` → kirim.
+2. Email baru harus datang dari domain Anda (bukan `auth.lovable-app.email`)
+   dan tombolnya menuju `.../reset-password#access_token=...&type=recovery`.
+3. Ganti password → login dengan password baru.
+
+### Alternatif termudah (tanpa DNS)
+
+Kalau hanya butuh reset password berfungsi dan tidak masalah pengirimnya
+`no-reply@supabase.co`: cukup **Langkah 1** (matikan hook Lovable) dan biarkan
+email bawaan Supabase yang mengirim. Batasnya ±4 email/jam pada paket gratis —
+cukup untuk admin. Custom SMTP di atas baru diperlukan untuk pengiriman
+bervolume lebih besar atau branding pengirim sendiri.
